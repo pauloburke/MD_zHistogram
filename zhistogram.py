@@ -35,13 +35,13 @@ def parseRange(string):
 #Reading and treating arguments ----------------------------------
 
 import argparse
-parser = argparse.ArgumentParser(description="This software generates a histogram of densities on z axis between two groups of atoms.")
+parser = argparse.ArgumentParser(description="This software generates a histogram of densities on z axis between two groups of atoms. Created by Paulo Burke 2017")
 parser.add_argument("traj", help=".xtc trajectory file.")
 parser.add_argument("topology", help=".pdb topology file.")
 parser.add_argument("index", help=".ndx index file.")
 parser.add_argument("group1", help="Name of group 1.")
 parser.add_argument("group2", help="Name of group 2.")
-parser.add_argument("-b","--bins", help="Cuttoff distance.",type=int)
+parser.add_argument("-b","--bins", help="Number of bins (default: numpy histogram 'auto').",type=int)
 parser.add_argument("-c","--cuttoff", help="Cuttoff distance.",type=float)
 parser.add_argument("-f","--frames", help="Range or number of frames to consider. Example 1-100 or 100.",type=parseRange)
 parser.add_argument("-o","--output", help="File to output the histogram image and data (without extention)")
@@ -128,7 +128,7 @@ count = 0
 
 #calculate distances
 if args.verbose:
-	print('Calculating distances...')
+	print('Calculating distances between '+str(args.group1)+' and '+str(args.group2)+' ...')
 initfr = frames[0]
 for fr in frames:
 	if args.verbose:
