@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import re
 
+
 def read_index(index_file):
 	assert (index_file.split('.')[1]=='ndx'),"Wrong file format. Index file shoud have a .ndx extention."
 	index = {}
@@ -40,10 +41,13 @@ parser.add_argument("topology", help=".pdb topology file.")
 parser.add_argument("index", help=".ndx index file.")
 parser.add_argument("group1", help="Name of group 1.")
 parser.add_argument("group2", help="Name of group 2.")
-parser.add_argument("-f","--frames", help="Range or number of frames to consider. Example 1-100 or 100.",type=parseRange)
+parser.add_argument("-b","--bins", help="Cuttoff distance.",type=int)
 parser.add_argument("-c","--cuttoff", help="Cuttoff distance.",type=float)
-parser.add_argument("-s","--show", help="Show plot of histogram.", action='store_true')
-parser.add_argument("-o","--output", help="File to output the histogram (.png)")
+parser.add_argument("-f","--frames", help="Range or number of frames to consider. Example 1-100 or 100.",type=parseRange)
+parser.add_argument("-o","--output", help="File to output the histogram image and data (without extention)")
+parser.add_argument("-p","--plot", help="Show plot of histogram.", action='store_true')
+parser.add_argument("-s","--smooth", help="Smooth curve by applying Fourier Transform.", action='store_true', default=False)
+parser.add_argument("-cv","--converge", help="Converge curve to 1.", action='store_true')
 parser.add_argument("-v","--verbose", help="Make the software more verbose.",action="store_true")
 args = parser.parse_args()
 
@@ -88,22 +92,30 @@ index = read_index(args.index)
 assert (args.group1 in index.keys()),"Group "+args.group1+" not found in index file. Options are: "+str(index.keys())
 assert (args.group2 in index.keys()),"Group "+args.group2+" not found in index file. Options are: "+str(index.keys())
 
-#setting cuttof
-cut = 0
-if args.cuttoff != None:
-	cut = args.cuttoff
-print(cut)
 
-#get box size
-box = traj.unitcell_lengths[0]
+#setting bins
+bins = "auto"
+if args.bins != None:
+	bins = args.bins
+
+#get mean box size
+box = np.zeros(3)
+for i in xrange(len(frames)):
+	box[0] += traj.unitcell_lengths[frames[i]][0]
+	box[1] += traj.unitcell_lengths[frames[i]][1]
+	box[2] += traj.unitcell_lengths[frames[i]][2]
+	
+box /= len(frames)
+
+
 if args.verbose:
-	print('Box size (nm): '+str(box))
+	print('Box mean size (nm): '+str(box))
 
 #set output file name
 if args.output != None:
 	outfile = args.output
 else:
-	outfile = args.traj.replace(".xtc",".png")
+	outfile = args.traj.replace(".xtc","")
 
 
 
@@ -113,58 +125,100 @@ else:
 distances = np.zeros(len(frames)*len(index[args.group1])*len(index[args.group2]))
 count = 0
 
+
+#calculate distances
 if args.verbose:
 	print('Calculating distances...')
+initfr = frames[0]
 for fr in frames:
 	if args.verbose:
-		print(str(fr+1)+' from '+str(len(frames))+' frames',end='\r')
+		print(str(fr-initfr+1)+' from '+str(len(frames))+' frames',end='\r')
 		sys.stdout.flush()
 		
 	for i in index[args.group1]:
 		for j in index[args.group2]:
 			distances[count] = traj.xyz[fr,i-1,2]-traj.xyz[fr,j-1,2]
+			#correcting boundaries
+			if distances[count]>box[2]:
+				distances[count]-=box[2]
+			if distances[count]<-box[2]:
+				distances[count]+=box[2]
 			count+=1
 print()
 
 
-if cut:
-	if args.verbose:
-		print('Applying cuttoff distance...')
-	distances = distances[distances<=cut]
-	distances = distances[distances>=-cut]
+
 	
 
 if args.verbose:
 	print('Calculating histogram...')
 	
 
-hist,bins = np.histogram(distances, bins='auto')
+#setting range
+if args.cuttoff != None:
+	hInit = -args.cuttoff
+	hEnd = args.cuttoff
+else:
+	hInit = np.amin(distances)
+	hEnd = np.amax(distances)
+	
+#calculate histogram
+hist,bins = np.histogram(distances,bins=bins, range=(hInit,hEnd))
+#calculate bins width
 dz = np.diff(bins)
-#Calculating average density
-rho = float(traj.n_atoms)/(box[0]*box[1]*box[2])
 
+#Calculating average density
+rho = float(len(index[args.group1])+len(index[args.group2]))/(box[0]*box[1]*box[2])
+fhist = np.zeros(len(hist))
 #normalize
+if args.verbose:
+	print("Normalizing...")
 for i in range(len(dz)):
-	hist[i] = hist[i]/len(frames)
+	fhist[i] = float(hist[i])/float(sum(hist))
 	volBin = dz[i]*box[0]*box[1]
 	nIdeal = volBin*rho
-	hist[i] = hist[i]/nIdeal
-
-
-center = (bins[:-1]+bins[1:])/2
-width = 0.7*(bins[1]-bins[0])
-plt.bar(center, hist, align = 'center', width = width,facecolor='green', edgecolor='green', alpha=0.5)
-plt.xlabel('nm')
-plt.ylabel('N')
-
-
+	fhist[i] = float(fhist[i])/nIdeal
+	
 
 if args.verbose:
-	print('Saving histogram plot to '+outfile+'...')
-plt.savefig(outfile) 
+	print("Smoothing...")
+#smooth curve with fourier
+if args.smooth:
+	rft = np.fft.rfft(fhist)
+	rft[21:] = 0   # Note, rft.shape = 21
+	fhist = np.fft.irfft(rft)
+
+if args.verbose:
+	print("Converging...")
+#converge ends to 1
+if args.converge:
+	first = fhist[0]
+	for i in range(len(fhist)):
+		fhist[i]/=first	
 
 
-if args.show:
+#create plot
+center = (bins[:-1]+bins[1:])/2
+plt.plot(center, fhist,color='green')
+plt.xlabel('nm')
+plt.ylabel('g(z)')
+
+
+#Save plot
+if args.verbose:
+	print('Saving histogram plot to '+outfile+'.png ...')
+plt.savefig(outfile+".png")
+ 
+#save data
+if args.verbose:
+	print('Saving histogram data to '+outfile+'.txt ...')
+f = open(outfile+"txt",'w')
+for i in range(len(fhist)):
+	f.write(str(bins[i])+"\t"+str(fhist[i])+"\n")
+f.close()
+
+#show plot
+if args.plot:
 	plt.show()
 
 
