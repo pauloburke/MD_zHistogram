@@ -9,16 +9,16 @@ import re
 
 
 def read_index(index_file):
-	assert (index_file.split('.')[1]=='ndx'),"Wrong file format. Index file shoud have a .ndx extention."
+	assert (index_file.split(".")[1]=="ndx"),"Wrong file format. Index file shoud have a .ndx extention."
 	index = {}
-	f = open(index_file,'r')
-	key = ''
+	f = open(index_file,"r")
+	key = ""
 	for line in f.readlines():
-		if line[0] == '[':
+		if line[0] == "[":
 			key = line[line.find("[")+2:line.find("]")-1]
 			index[key] = []
 		else:
-			for j in [int(i) for i in line.split(' ') if i<>'' and i<>'\n']:
+			for j in [int(i) for i in line.split(" ") if i<>"" and i<>"\n"]:
 				index[key].append(j)
 	return index
 	
@@ -35,7 +35,7 @@ def parseRange(string):
 #Reading and treating arguments ----------------------------------
 
 import argparse
-parser = argparse.ArgumentParser(description="This software generates a histogram of densities on z axis between two groups of atoms. Created by Paulo Burke 2017")
+parser = argparse.ArgumentParser(description="""This software generates a histogram of densities on z axis between two groups of atoms. Created by Paulo Burke 2017""")
 parser.add_argument("traj", help=".xtc trajectory file.")
 parser.add_argument("topology", help=".pdb topology file.")
 parser.add_argument("index", help=".ndx index file.")
