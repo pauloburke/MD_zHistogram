@@ -45,9 +45,9 @@ parser.add_argument("-b","--bins", help="Number of bins (default: numpy histogra
 parser.add_argument("-c","--cuttoff", help="Cuttoff distance.",type=float)
 parser.add_argument("-f","--frames", help="Range or number of frames to consider. Example 1-100 or 100.",type=parseRange)
 parser.add_argument("-o","--output", help="File to output the histogram image and data (without extention)")
-parser.add_argument("-p","--plot", help="Show plot of histogram.", action='store_true')
-parser.add_argument("-s","--smooth", help="Smooth curve by applying Fourier Transform.", action='store_true', default=False)
-parser.add_argument("-cv","--converge", help="Converge curve to 1.", action='store_true')
+parser.add_argument("-p","--plot", help="Show plot of histogram.", action="store_true")
+parser.add_argument("-s","--smooth", help="Smooth curve by applying Fourier Transform.", action="store_true", default=False)
+parser.add_argument("-cv","--converge", help="Converge curve to 1.", action="store_true")
 parser.add_argument("-v","--verbose", help="Make the software more verbose.",action="store_true")
 args = parser.parse_args()
 
@@ -57,13 +57,13 @@ args = parser.parse_args()
 
 #reading trajectories
 if args.verbose:
-	print('Reading trajectory from '+args.traj+' and topology from '+args.topology+'...')
+	print("Reading trajectory from "+args.traj+" and topology from "+args.topology+"...")
 traj = md.load(args.traj,top=args.topology)
 if args.verbose:
-	print('Trajecroty data:')
-	print('# frames: '+str(traj.n_frames))
-	print('# atoms: '+str(traj.n_atoms))
-	print('# residues: '+str(traj.n_residues))
+	print("Trajecroty data:")
+	print("# frames: "+str(traj.n_frames))
+	print("# atoms: "+str(traj.n_atoms))
+	print("# residues: "+str(traj.n_residues))
 	
 
 #setting frames for calculation
@@ -86,7 +86,7 @@ else:
 
 #reading indexes
 if args.verbose:
-	print('Reading atoms indexes from '+args.index+'...')
+	print("Reading atoms indexes from "+args.index+"...")
 index = read_index(args.index)
 
 assert (args.group1 in index.keys()),"Group "+args.group1+" not found in index file. Options are: "+str(index.keys())
@@ -109,7 +109,7 @@ box /= len(frames)
 
 
 if args.verbose:
-	print('Box mean size (nm): '+str(box))
+	print("Box mean size (nm): "+str(box))
 
 #set output file name
 if args.output != None:
@@ -128,11 +128,11 @@ count = 0
 
 #calculate distances
 if args.verbose:
-	print('Calculating distances between '+str(args.group1)+' and '+str(args.group2)+' ...')
+	print("Calculating distances between "+str(args.group1)+" and "+str(args.group2)+" ...")
 initfr = frames[0]
 for fr in frames:
 	if args.verbose:
-		print(str(fr-initfr+1)+' from '+str(len(frames))+' frames',end='\r')
+		print(str(fr-initfr+1)+" from "+str(len(frames))+" frames",end="\r")
 		sys.stdout.flush()
 		
 	for i in index[args.group1]:
@@ -151,7 +151,7 @@ print()
 	
 
 if args.verbose:
-	print('Calculating histogram...')
+	print("Calculating histogram...")
 	
 
 #setting range
@@ -199,20 +199,20 @@ if args.converge:
 
 #create plot
 center = (bins[:-1]+bins[1:])/2
-plt.plot(center, fhist,color='green')
-plt.xlabel('nm')
-plt.ylabel('g(z)')
+plt.plot(center, fhist,color="green")
+plt.xlabel("nm")
+plt.ylabel("g(z)")
 
 
 #Save plot
 if args.verbose:
-	print('Saving histogram plot to '+outfile+'.png ...')
+	print("Saving histogram plot to "+outfile+".png ...")
 plt.savefig(outfile+".png")
  
 #save data
 if args.verbose:
-	print('Saving histogram data to '+outfile+'.txt ...')
-f = open(outfile+"txt",'w')
+	print("Saving histogram data to "+outfile+".txt ...")
+f = open(outfile+"txt","w")
 for i in range(len(fhist)):
 	f.write(str(bins[i])+"\t"+str(fhist[i])+"\n")
 f.close()
@@ -223,6 +223,6 @@ if args.plot:
 
 
 if args.verbose:
-	print('Done.')
+	print("Done.")
 
 
