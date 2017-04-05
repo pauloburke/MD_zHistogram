@@ -180,18 +180,20 @@ for i in range(len(dz)):
 	fhist[i] = float(fhist[i])/nIdeal
 	
 
-if args.verbose:
-	print("Smoothing...")
+
 #smooth curve with fourier
 if args.smooth:
+	if args.verbose:
+		print("Smoothing...")
 	rft = np.fft.rfft(fhist)
 	rft[21:] = 0   # Note, rft.shape = 21
 	fhist = np.fft.irfft(rft)
 
-if args.verbose:
-	print("Converging...")
+
 #converge ends to 1
 if args.converge:
+	if args.verbose:
+		print("Converging...")
 	first = fhist[0]
 	for i in range(len(fhist)):
 		fhist[i]/=first	
