@@ -180,7 +180,6 @@ for i in range(len(dz)):
 	fhist[i] = float(fhist[i])/nIdeal
 	
 
-
 #smooth curve with fourier
 if args.smooth:
 	if args.verbose:
@@ -190,17 +189,20 @@ if args.smooth:
 	fhist = np.fft.irfft(rft)
 
 
+
 #converge ends to 1
 if args.converge:
 	if args.verbose:
 		print("Converging...")
 	first = fhist[0]
 	for i in range(len(fhist)):
-		fhist[i]/=first	
+		fhist[i]/=abs(first)
 
 
 #create plot
 center = (bins[:-1]+bins[1:])/2
+while(len(fhist)<len(center)):
+	fhist = np.append(fhist,fhist[-1])
 plt.plot(center, fhist,color="green")
 plt.xlabel("nm")
 plt.ylabel("g(z)")
